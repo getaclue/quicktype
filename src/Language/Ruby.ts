@@ -497,7 +497,9 @@ class RubyRenderer extends ConvenienceRenderer {
 
             this.ensureBlankLine();
             this.emitBlock("def self.from_dynamic!(d)", () => {
-                this.emitLine("new(");
+                // const instance = modifySource(_.snakeCase, unionName);
+                const instance = "union";
+                this.emitLine(instance, " = new(");
                 this.indent(() => {
                     this.forEachUnionMember(u, nonNulls, "none", null, (name, t) => {
                         this.emitLine(name, ":");
@@ -507,6 +509,8 @@ class RubyRenderer extends ConvenienceRenderer {
                     });
                 });
                 this.emitLine(")");
+                this.emitLine(`raise "Invalid union" unless `, instance, `.__attributes__.count { |k, v| not v.nil? } == 1`);
+                this.emitLine(instance);
             });
         });
     }

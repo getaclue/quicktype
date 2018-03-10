@@ -44,8 +44,9 @@ class DifferentThingElement < Dry::Struct
   attribute :different_thing_class, Types.Instance(DifferentThingClass).optional
   attribute :integer,               Types::Strict::Int.optional
   attribute :string,                Types::Strict::String.optional
+
   def self.from_dynamic!(d)
-    new(
+    union = new(
       different_thing_class:
         begin schema[:different_thing_class][DifferentThingClass.from_dynamic!(d)] rescue nil end,
       integer:
@@ -53,6 +54,8 @@ class DifferentThingElement < Dry::Struct
       string:
         begin schema[:string][d] rescue nil end,
     )
+    raise "Invalid union" unless union.__attributes__.count { |k, v| not v.nil? } == 1
+    union
   end
 end
 
