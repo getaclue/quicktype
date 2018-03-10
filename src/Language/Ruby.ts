@@ -38,6 +38,7 @@ import {
 } from "../Strings";
 
 const keywords = [
+    "Object",
     "__ENCODING__",
     "__FILE__",
     "__LINE__",
@@ -167,6 +168,10 @@ class RubyRenderer extends ConvenienceRenderer {
 
     protected topLevelNameStyle(rawName: string): string {
         return simpleNameStyle(rawName, true);
+    }
+
+    protected forbiddenNamesForGlobalNamespace(): string[] {
+        return ["Object"];
     }
 
     protected forbiddenForClassProperties(_c: ClassType, _classNamed: Name): ForbiddenWordsInfo {
@@ -307,7 +312,7 @@ class RubyRenderer extends ConvenienceRenderer {
                 optional ? "&" : "",
                 ".map { |k, v| [k, ",
                 this.fromDynamic(mapType.values, "v"),
-                "] }.to_hash"
+                "] }.to_h"
             ],
             enumType => {
                 const expression = ["Types::", this.nameForNamedType(enumType), "[", e, "]"];
@@ -317,6 +322,9 @@ class RubyRenderer extends ConvenienceRenderer {
                 const nullable = nullableFromUnion(unionType);
                 if (nullable !== null) {
                     return [e, ".nil? ? nil : ", this.fromDynamic(nullable, e)];
+                }
+                if (this.marshalsImplicitly(unionType)) {
+                    return e;
                 }
                 const expression = [this.nameForNamedType(unionType), ".from_dynamic!(", e, ")"];
                 return optional ? [e, " ? ", expression, " : nil"] : expression;
@@ -335,20 +343,17 @@ class RubyRenderer extends ConvenienceRenderer {
             _stringType => e,
             arrayType => [e, optional ? "&" : "", ".map { |x| ", this.toDynamic(arrayType.items, "x"), " }"],
             _classType => [e, optional ? "&" : "", ".to_dynamic"],
-            mapType => [
-                e,
-                optional ? "&" : "",
-                ".map { |k, v| [k, ",
-                this.toDynamic(mapType.values, "v"),
-                "] }.to_hash"
-            ],
+            mapType => [e, optional ? "&" : "", ".map { |k, v| [k, ", this.toDynamic(mapType.values, "v"), "] }.to_h"],
             _enumType => e,
             unionType => {
                 const nullable = nullableFromUnion(unionType);
                 if (nullable !== null) {
-                    return [e, ".nil? ? nil : ", this.fromDynamic(nullable, e)];
+                    return [e, ".nil? ? nil : ", this.toDynamic(nullable, e)];
                 }
-                return "raise 'implement union to_dynamic'";
+                if (this.marshalsImplicitly(unionType)) {
+                    return e;
+                }
+                return [e, optional ? "&" : "", ".to_dynamic"];
             }
         );
     }

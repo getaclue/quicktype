@@ -164,8 +164,8 @@ class TopLevel < Dry::Struct
       person:             Person1.from_dynamic!(d["person"]),
       people:             d["people"].map { |x| PersonElement.from_dynamic!(x) },
       different_things:   d["differentThings"].map { |x| DifferentThingElement.from_dynamic!(x) },
-      map_value:          d["mapValue"].map { |k, v| [k, v.nil? ? nil : v] }.to_hash,
-      nullable_map_value: d["nullableMapValue"].map { |k, v| [k, v.nil? ? nil : v] }.to_hash,
+      map_value:          d["mapValue"].map { |k, v| [k, v.nil? ? nil : v] }.to_h,
+      nullable_map_value: d["nullableMapValue"].map { |k, v| [k, v.nil? ? nil : v] }.to_h,
     )
   end
 
@@ -186,9 +186,9 @@ class TopLevel < Dry::Struct
       "tuples"           => @tuples,
       "person"           => @person.to_dynamic,
       "people"           => @people.map { |x| x.to_dynamic },
-      "differentThings"  => @different_things.map { |x| raise 'implement union to_dynamic' },
-      "mapValue"         => @map_value.map { |k, v| [k, v.nil? ? nil : v] }.to_hash,
-      "nullableMapValue" => @nullable_map_value.map { |k, v| [k, v.nil? ? nil : v] }.to_hash,
+      "differentThings"  => @different_things.map { |x| x.to_dynamic },
+      "mapValue"         => @map_value.map { |k, v| [k, v.nil? ? nil : v] }.to_h,
+      "nullableMapValue" => @nullable_map_value.map { |k, v| [k, v.nil? ? nil : v] }.to_h,
     }
   end
 
