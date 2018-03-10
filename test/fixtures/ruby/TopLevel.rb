@@ -139,7 +139,7 @@ class TopLevel < Dry::Struct
   attribute :date_value,         Types::Strict::String
   attribute :uuid_value,         Types::Strict::String
   attribute :name_with_spaces,   Types::Nil
-  attribute :double_value,       Types::Strict::Float
+  attribute :double_value,       Types::Decimal
   attribute :int_value,          Types::Strict::Int
   attribute :boolean_value,      Types::Strict::Bool
   attribute :null_value,         Types::Nil

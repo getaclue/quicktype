@@ -197,7 +197,8 @@ class RubyRenderer extends ConvenienceRenderer {
             _nullType => ["Types::Nil", optional],
             _boolType => ["Types::Strict::Bool", optional],
             _integerType => ["Types::Strict::Int", optional],
-            _doubleType => ["Types::Strict::Float", optional],
+            // TODO make this accept float and int
+            _doubleType => ["Types::Decimal", optional],
             _stringType => ["Types::Strict::String", optional],
             arrayType => ["Types.Array(", this.dryType(arrayType.items), ")", optional],
             classType => ["Types.Instance(", this.nameForNamedType(classType), ")", optional],
