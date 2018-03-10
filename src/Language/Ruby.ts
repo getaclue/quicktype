@@ -369,7 +369,7 @@ class RubyRenderer extends ConvenienceRenderer {
             _stringType => true,
             arrayType => this.marshalsImplicitly(arrayType.items),
             _classType => false,
-            _mapType => false,
+            mapType => this.marshalsImplicitly(mapType.values),
             _enumType => true,
             unionType => {
                 const nullable = nullableFromUnion(unionType);
