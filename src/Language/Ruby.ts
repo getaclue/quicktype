@@ -168,7 +168,7 @@ class RubyRenderer extends ConvenienceRenderer {
     protected topLevelNameStyle(rawName: string): string {
         return simpleNameStyle(rawName, true);
     }
-    // DifferentThingElement::schema[:string]
+
     protected forbiddenForClassProperties(_c: ClassType, _classNamed: Name): ForbiddenWordsInfo {
         return { names: keywords, includeGlobalForbidden: true };
     }
@@ -219,8 +219,7 @@ class RubyRenderer extends ConvenienceRenderer {
     }
 
     private exampleUse(t: Type, exp: Sourcelike, depth: number = 6, optional: boolean = false): Sourcelike {
-        depth--;
-        if (depth <= 0) {
+        if (depth-- <= 0) {
             return exp;
         }
 
@@ -250,7 +249,16 @@ class RubyRenderer extends ConvenienceRenderer {
                 return exp;
             },
             mapType => this.exampleUse(mapType.values, [exp, safeNav, `["…"]`], depth),
-            _enumType => exp,
+            enumType => {
+                let name: Name | undefined;
+                this.forEachEnumCase(enumType, "none", theName => {
+                    name = name || theName;
+                });
+                if (name !== undefined) {
+                    return [exp, " == ", this.nameForNamedType(enumType), "::", name];
+                }
+                return exp;
+            },
             unionType => {
                 const nullable = nullableFromUnion(unionType);
                 if (nullable !== null) {
@@ -405,7 +413,7 @@ class RubyRenderer extends ConvenienceRenderer {
 
             this.ensureBlankLine();
             this.emitBlock(["def self.from_dynamic!(d)"], () => {
-                this.emitLine(className, ".new(");
+                this.emitLine("new(");
                 this.indent(() => {
                     const inits: Sourcelike[][] = [];
                     this.forEachClassProperty(c, "none", (name, jsonName, p) => {
@@ -486,6 +494,20 @@ class RubyRenderer extends ConvenienceRenderer {
                 table.push([["attribute :", this.nameForUnionMember(u, maybeNull), ", "], [this.dryType(maybeNull)]]);
             }
             this.emitTable(table);
+
+            this.ensureBlankLine();
+            this.emitBlock("def self.from_dynamic!(d)", () => {
+                this.emitLine("new(");
+                this.indent(() => {
+                    this.forEachUnionMember(u, nonNulls, "none", null, (name, t) => {
+                        this.emitLine(name, ":");
+                        this.indent(() => {
+                            this.emitLine("begin schema[:", name, "][", this.fromDynamic(t, "d"), "] rescue nil end,");
+                        });
+                    });
+                });
+                this.emitLine(")");
+            });
         });
     }
 
@@ -494,7 +516,7 @@ class RubyRenderer extends ConvenienceRenderer {
         this.forEachEnumCase(e, "none", (_name, json) => {
             cases.push([cases.length === 0 ? "" : ", ", `"${stringEscape(json)}"`]);
         });
-        this.emitLine(name, " = Types::String.enum(", ...cases, ")");
+        this.emitLine(name, " = Types::Strict::String.enum(", ...cases, ")");
     }
 
     protected emitSourceStructure() {

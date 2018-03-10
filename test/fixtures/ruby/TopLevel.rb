@@ -20,7 +20,7 @@ class DifferentThingClass < Dry::Struct
   attribute :name, Types::Strict::String
 
   def self.from_dynamic!(d)
-    DifferentThingClass.new(
+    new(
       name: d["name"],
     )
   end
@@ -44,6 +44,16 @@ class DifferentThingElement < Dry::Struct
   attribute :different_thing_class, Types.Instance(DifferentThingClass).optional
   attribute :integer,               Types::Strict::Int.optional
   attribute :string,                Types::Strict::String.optional
+  def self.from_dynamic!(d)
+    new(
+      different_thing_class:
+        begin schema[:different_thing_class][DifferentThingClass.from_dynamic!(d)] rescue nil end,
+      integer:
+        begin schema[:integer][d] rescue nil end,
+      string:
+        begin schema[:string][d] rescue nil end,
+    )
+  end
 end
 
 class PersonElement < Dry::Struct
@@ -52,7 +62,7 @@ class PersonElement < Dry::Struct
   attribute :optional_value, Types::Strict::Bool.optional
 
   def self.from_dynamic!(d)
-    PersonElement.new(
+    new(
       name:           d["name"],
       int_or_string:  d["intOrString"],
       optional_value: d["optionalValue"],
@@ -81,7 +91,7 @@ class Person1 < Dry::Struct
   attribute :int_or_string, Types::Strict::Int
 
   def self.from_dynamic!(d)
-    Person1.new(
+    new(
       name:          d["name"],
       int_or_string: d["intOrString"],
     )
@@ -120,7 +130,7 @@ class TopLevel < Dry::Struct
   attribute :nullable_map_value, Types::Strict::Hash.meta(of: Types::Strict::Int.optional)
 
   def self.from_dynamic!(d)
-    TopLevel.new(
+    new(
       string_value:       d["stringValue"],
       date_value:         d["dateValue"],
       uuid_value:         d["uuidValue"],
