@@ -157,8 +157,8 @@ class RubyRenderer extends ConvenienceRenderer {
         super(graph, leadingComments);
     }
 
-    protected emitDescriptionBlock(lines: string[]): void {
-        this.emitCommentLines(lines, "# ");
+    protected get commentLineStart(): string {
+        return "# ";
     }
 
     protected get needsTypeDeclarationBeforeUse(): boolean {
