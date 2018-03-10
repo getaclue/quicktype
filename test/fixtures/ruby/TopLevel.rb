@@ -57,6 +57,24 @@ class DifferentThingElement < Dry::Struct
     raise "Invalid union" unless union.__attributes__.count { |k, v| not v.nil? } == 1
     union
   end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    if @different_thing_class != nil
+      then @different_thing_class.to_dynamic
+    elsif @integer != nil
+      then @integer
+    elsif @string != nil
+      then @string
+      end
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
 end
 
 class PersonElement < Dry::Struct
@@ -121,7 +139,7 @@ class TopLevel < Dry::Struct
   attribute :date_value,         Types::Strict::String
   attribute :uuid_value,         Types::Strict::String
   attribute :name_with_spaces,   Types::Nil
-  attribute :double_value,       Types::Strict::Decimal
+  attribute :double_value,       Types::Strict::Float
   attribute :int_value,          Types::Strict::Int
   attribute :boolean_value,      Types::Strict::Bool
   attribute :null_value,         Types::Nil
@@ -145,7 +163,7 @@ class TopLevel < Dry::Struct
       tuples:             d["tuples"],
       person:             Person1.from_dynamic!(d["person"]),
       people:             d["people"].map { |x| PersonElement.from_dynamic!(x) },
-      different_things:   d["differentThings"].map { |x| raise 'implement union from_dynamic!' },
+      different_things:   d["differentThings"].map { |x| DifferentThingElement.from_dynamic!(x) },
       map_value:          d["mapValue"].map { |k, v| [k, v.nil? ? nil : v] }.to_hash,
       nullable_map_value: d["nullableMapValue"].map { |k, v| [k, v.nil? ? nil : v] }.to_hash,
     )

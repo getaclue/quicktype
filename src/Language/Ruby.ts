@@ -197,7 +197,7 @@ class RubyRenderer extends ConvenienceRenderer {
             _nullType => ["Types::Nil", optional],
             _boolType => ["Types::Strict::Bool", optional],
             _integerType => ["Types::Strict::Int", optional],
-            _doubleType => ["Types::Strict::Decimal", optional],
+            _doubleType => ["Types::Strict::Float", optional],
             _stringType => ["Types::Strict::String", optional],
             arrayType => ["Types.Array(", this.dryType(arrayType.items), ")", optional],
             classType => ["Types.Instance(", this.nameForNamedType(classType), ")", optional],
@@ -317,7 +317,8 @@ class RubyRenderer extends ConvenienceRenderer {
                 if (nullable !== null) {
                     return [e, ".nil? ? nil : ", this.fromDynamic(nullable, e)];
                 }
-                return "raise 'implement union from_dynamic!'";
+                const expression = [this.nameForNamedType(unionType), ".from_dynamic!(", e, ")"];
+                return optional ? [e, " ? ", expression, " : nil"] : expression;
             }
         );
     }
@@ -509,8 +510,37 @@ class RubyRenderer extends ConvenienceRenderer {
                     });
                 });
                 this.emitLine(")");
-                this.emitLine(`raise "Invalid union" unless `, instance, `.__attributes__.count { |k, v| not v.nil? } == 1`);
+                this.emitLine(
+                    `raise "Invalid union" unless `,
+                    instance,
+                    `.__attributes__.count { |k, v| not v.nil? } == 1`
+                );
                 this.emitLine(instance);
+            });
+
+            this.ensureBlankLine();
+            this.emitBlock("def self.from_json!(json)", () => {
+                this.emitLine("from_dynamic!(JSON.parse(json))");
+            });
+
+            this.ensureBlankLine();
+            this.emitBlock("def to_dynamic", () => {
+                let first = true;
+                this.forEachUnionMember(u, nonNulls, "none", null, (name, t) => {
+                    this.emitLine(first ? "if" : "elsif", " @", name, " != nil");
+                    this.indent(() => {
+                        this.emitLine("then ", this.toDynamic(t, ["@", name]));
+                    });
+                    first = false;
+                });
+                this.indent(() => {
+                    this.emitLine("end");
+                });
+            });
+
+            this.ensureBlankLine();
+            this.emitBlock("def to_json(options = nil)", () => {
+                this.emitLine("JSON.generate(to_dynamic, options)");
             });
         });
     }
